@@ -4,6 +4,14 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `label` command: text (`text`) or HTML (`html`) labels; positioned, moved, followed and styled like images, without `url`.
+- `fixed` parameter (`image`, `label`, `set`): the object is not affected by the camera – neither its size nor its position changes with `zoomTo`.
+- `set` can change `text` / `html` of labels and toggle `fixed`.
+- Example `examples/sample-5` (labels, `fixed`).
+
 ## [1.1.0] - 2026-09-26
 
 ### Changed

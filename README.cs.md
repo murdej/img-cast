@@ -65,7 +65,7 @@ Moderní prohlížeč (ES moduly, `Element.animate`, `EventTarget`). Knihovna sa
 
 ## Ukázka
 
-`examples/index.html` v repozitáři (`sample-1` základy, `sample-2` async/await, `sample-3` follow a zoom, `sample-4` makra, CSS třídy, smyčka) – spustit přes HTTP server (moduly a `fetch` nefungují přes `file://`):
+`examples/index.html` v repozitáři (`sample-1` základy, `sample-2` async/await, `sample-3` follow a zoom, `sample-4` makra, CSS třídy, smyčka, `sample-5` popisky a pevné objekty) – spustit přes HTTP server (moduly a `fetch` nefungují přes `file://`):
 
 ```sh
 python3 -m http.server   # a otevřít /examples/

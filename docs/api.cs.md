@@ -7,18 +7,20 @@ Formát scriptu: [script-format.cs.md](script-format.cs.md). Typy: `src/img-cast
 ## Model
 
 Přehrávač vykreslí scénu do `container`. Ten dostane `overflow: hidden` a (pokud nemá jiné) `position: relative`.
-Kontejner obsahuje jednu vnitřní vrstvu („svět“, kterou posouvá a zvětšuje `zoomTo`) a každý `image` v ní je dvojice elementů:
+Kontejner obsahuje dvě vrstvy: „svět“ (kterou posouvá a zvětšuje `zoomTo`) a nad ní nezvětšovanou vrstvu pro objekty s `fixed: true`.
+Každý `image` / `label` žije v jedné z nich jako dvojice elementů:
 
 ```
-<div>   ← wrapper: position:absolute, left/top (x, y), translate podle xa/ya, visibility
-  <img> ← obrázek: `styles` a CSS animace (`animate`)
+<div>       ← wrapper: position:absolute, left/top (x, y), translate podle xa/ya, visibility
+  <img>     ← obrázek: `styles`, `cssClass` a CSS animace (`animate`)
+  <div>     ← (popisek má místo img div: text / html)
 </div>
 ```
 
-Polohu (`slide`, `set`, `moveTo`) tedy řeší wrapper a vzhled/animace `img`, takže se navzájem neruší
+Polohu (`slide`, `set`, `moveTo`) tedy řeší wrapper a vzhled/animace vnitřní element, takže se navzájem neruší
 (např. `transform: scale()` v animaci nerozhodí zarovnání).
 
-Kroky se provádějí sekvenčně, pokud nemá `slide` nebo `subSteps` `async: true` – pak script pokračuje hned a `await` na něj může počkat později (viz [script-format.cs.md](script-format.cs.md#souběžné-kroky)). Krok je hotový okamžitě (`image`, `set`), po uplynutí `duration` (`slide`, `pause`)
+Kroky se provádějí sekvenčně, pokud nemá `slide` nebo `subSteps` `async: true` – pak script pokračuje hned a `await` na něj může počkat později (viz [script-format.cs.md](script-format.cs.md#souběžné-kroky)). Krok je hotový okamžitě (`image`, `label`, `set`), po uplynutí `duration` (`slide`, `pause`)
 nebo – u `animate` – jen s `"wait": true`; bez něj animace běží na pozadí a script pokračuje dál.
 
 ## `new ImgCast(container, script, options?)`
@@ -124,6 +126,7 @@ Analogicky ve Vue (`onMounted`/`onBeforeUnmount`) nebo Svelte (`onMount`).
 ## Omezení
 
 - Vyžaduje DOM (prohlížeč). Import v Node.js (SSR) projde, konstruktor ne.
+- `html` popisku se vkládá do `innerHTML` bez sanitizace – nikdy s ním nepoužívej nedůvěryhodné scripty (použij `text`).
 - Kamera (`zoomTo`) je CSS transformace vnitřní vrstvy animovaná přes `requestAnimationFrame`; změna velikosti kontejneru při zoomované scéně se projeví až při dalším pohybu kamery.
 - `follow` používá aktuální vypočtenou pozici obrázků, takže sleduje i obrázek uprostřed `slide`.
 - Jména `awid` jsou globální pro jedno přehrávání; při každém `play()` se vymažou.

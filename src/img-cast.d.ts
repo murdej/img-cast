@@ -17,8 +17,8 @@ export type Length = number | string;
 /** `(number)s|ms` = fixed time, `(number)pps|ppms` = pixels per second / millisecond. */
 export type SpeedString = string;
 
-export interface ImageParams {
-  url?: string;
+/** Parameters shared by all scene objects (`image`, `label`). */
+export interface ObjectParams {
   xa?: 'left' | 'right' | 'center' | `${number}%`;
   ya?: 'top' | 'bottom' | 'center' | `${number}%`;
   x?: Length;
@@ -31,6 +31,19 @@ export interface ImageParams {
   follow?: string | null;
   /** Class(es) from the root `cssClasses`. In `set` it replaces the classes; `null` removes them. */
   cssClass?: string | string[] | null;
+  /** `true` = not affected by the camera (`zoomTo`): keeps its size and screen position. */
+  fixed?: boolean;
+}
+
+export interface ImageParams extends ObjectParams {
+  url?: string;
+}
+
+export interface LabelParams extends ObjectParams {
+  /** Plain text (`text` or `html`, not both). */
+  text?: string;
+  /** HTML content – inserted as-is, use only trusted scripts. */
+  html?: string;
 }
 
 export interface ImageStep extends ImageParams {
@@ -38,9 +51,18 @@ export interface ImageStep extends ImageParams {
   id: string;
 }
 
-export interface SetStep extends ImageParams {
+export interface LabelStep extends LabelParams {
+  cmd: 'label';
+  id: string;
+}
+
+/** Changes an existing object; `url` is for images, `text`/`html` for labels. */
+export interface SetStep extends ObjectParams {
   cmd: 'set';
   id: string;
+  url?: string;
+  text?: string;
+  html?: string;
 }
 
 export interface SlideStep {
@@ -122,6 +144,7 @@ export interface CallStep {
 
 export type Step =
   | ImageStep
+  | LabelStep
   | SetStep
   | SlideStep
   | PauseStep
@@ -161,8 +184,8 @@ export interface Script {
   zoomSpeed?: SpeedString;
 }
 
-/** Helper for writing a script in TypeScript: returns its argument, only checks the type. */
-export function defineScript<T extends Script>(script: T): T;
+/** Helper for writing a script in TypeScript: returns its argument, checks it against `Script` (typos in keys are reported). */
+export function defineScript(script: Script): Script;
 
 /**
  * Converts a script in the legacy `kebab-case` format (`move-to`, `timing-function`, `sub-steps`, ...)

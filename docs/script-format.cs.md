@@ -23,10 +23,11 @@ Jména, která si volíš sám (animace, makra, argumenty, CSS třídy, CSS vlas
 - [Klíče v kořeni](#klíče-v-kořeni)
 - [Přehled příkazů](#přehled-příkazů)
 - [Umístění: `x`, `y`, `xa`, `ya`](#umístění)
-- [Příkazy](#příkazy): [`image`](#image) · [`set`](#set) · [`slide`](#slide) · [`pause`](#pause) · [`animate`](#animate) · [`subSteps`](#substeps) · [`await`](#await) · [`zoomTo`](#zoomto)
+- [Příkazy](#příkazy): [`image`](#image) · [`label`](#label) · [`set`](#set) · [`slide`](#slide) · [`pause`](#pause) · [`animate`](#animate) · [`subSteps`](#substeps) · [`await`](#await) · [`zoomTo`](#zoomto)
 - [Souběžné kroky: `async`, `awid`, `await`](#souběžné-kroky)
 - [Sledování: `follow`](#sledování-obrázků-follow)
 - [Kamera a zoom](#kamera-a-zoom)
+- [Pevné objekty: `fixed`](#pevné-objekty-fixed)
 - [Makra: `macros`, `call`](#makra)
 - [CSS třídy: `cssClasses`, `cssClass`](#css-třídy)
 - [`animations`](#animations)
@@ -63,7 +64,8 @@ Kroky se provádějí **postupně**; další začne, až předchozí skončí.
 | `cmd` | Co dělá | Čeká na |
 |-------|--------------|-------------|
 | [`image`](#image) | přidá obrázek do scény | nic (okamžitě) |
-| [`set`](#set) | okamžitě změní existující obrázek | nic (okamžitě) |
+| [`label`](#label) | přidá do scény textový / HTML popisek | nic (okamžitě) |
+| [`set`](#set) | okamžitě změní existující obrázek nebo popisek | nic (okamžitě) |
 | [`slide`](#slide) | plynule posune obrázek | konec pohybu |
 | [`pause`](#pause) | počká | uplynutí času |
 | [`animate`](#animate) | spustí pojmenovanou animaci na obrázku | nic, nebo konec animace (`wait`) |
@@ -73,6 +75,8 @@ Kroky se provádějí **postupně**; další začne, až předchozí skončí.
 | [`call`](#call) | spustí [makro](#makra) s argumenty | dokončení makra (pokud není `async`) |
 
 ## Umístění
+
+> Vše níže (`x`, `y`, `xa`, `ya`, `moveTo`, `follow`, `visible`, `styles`, `cssClass`, `fixed`) platí stejně pro **obrázky** i **popisky** – společně se jim říká *objekty*. `id` objektu je společné pro oba druhy.
 
 Obrázky se umisťují ve scéně (kontejneru) pomocí **kotevního bodu** `x`, `y`.
 `xa`/`ya` určují, který bod *obrázku* se na něj umístí.
@@ -109,6 +113,7 @@ Přidá do scény nový obrázek. Odkazuje se na něj později přes `id`.
 | `styles` | ne | objekt CSS vlastností aplikovaných na obrázek, např. `{ "opacity": 0 }` |
 | `follow` | ne | `id` jiného obrázku: když se ten pohne, pohne se s ním i tento, viz [Sledování](#sledování-obrázků-follow) |
 | `cssClass` | ne | název třídy nebo pole názvů z [`cssClasses`](#css-třídy) |
+| `fixed` | ne | `true` = kamera (`zoomTo`) objekt neovlivňuje, viz [Pevné objekty](#pevné-objekty-fixed) |
 
 ```json
 { "cmd": "image", "id": "cursor", "url": "./cursor.svg", "x": "50%", "y": "50%" }
@@ -130,10 +135,35 @@ Místo souřadnic se lze odkázat na jiný obrázek:
 { "cmd": "set", "id": "click", "moveTo": "cursor" }
 ```
 
+### `label`
+
+Přidá do scény textový popisek. Funguje jako [`image`](#image) – umisťuje se, posouvá (`slide`), sleduje (`follow`), stylizuje (`styles`, `cssClass`) i animuje (`animate`) stejně – s těmito rozdíly:
+
+- **nemá `url`**,
+- má **`text`** nebo **`html`** (jedno z nich, ne obojí),
+- jeho element je `div`.
+
+| Klíč | Povinný | Význam |
+|------|:-------:|--------|
+| `id` | ano | identifikátor pro ostatní příkazy |
+| `text` | jedno z | čistý text; vkládá se jako text, takže `<` a `&` netřeba escapovat. Zalomení řádků (`\n`) se zachovají |
+| `html` | jedno z | formátovaný obsah (`<b>`, `<span style="...">`, ...) vložený jako HTML |
+| `x`, `y`, `xa`, `ya`, `visible`, `moveTo`, `styles`, `follow`, `cssClass`, `fixed` | ne | stejné jako u [`image`](#image) |
+
+```json
+{ "cmd": "label", "id": "title", "html": "<b>Krok 1:</b> klikni na <i>Uložit</i>", "x": "20px", "y": "20px",
+  "cssClass": "hud", "fixed": true }
+{ "cmd": "label", "id": "hint", "text": "Klikni sem", "x": "50%", "y": "10%", "xa": "center" }
+```
+
+- Text se ve výchozím stavu nezalamuje (`white-space: pre` u `text`, `nowrap` u `html`). Pro zalamování nastav `styles` (např. `{ "whiteSpace": "normal", "width": "200px" }`). Text dědí font a barvu stránky – vzhled si definuj v [`cssClasses`](#css-třídy) nebo `styles`.
+- **`html` se vkládá jako HTML bez jakékoli kontroly.** Používej ho jen se scripty, kterým věříš (script z nedůvěryhodného zdroje by mohl vložit skripty – tam použij `text`).
+- Obsah lze později změnit příkazem [`set`](#set) s `text` / `html`; `label` nelze zadat `url`, `image` nelze zadat `text` / `html`.
+
 ### `set`
 
-Okamžitě změní existující obrázek. Přijímá stejné parametry jako [`image`](#image) (`id` vybírá obrázek):
-`url`, `x`, `y`, `xa`, `ya`, `visible`, `moveTo`, `styles`, `follow` (`null` sledování ukončí), `cssClass` (nahradí třídy; `null` je odebere). Mění se jen zadané parametry; `styles` se přidávají ke stávajícím.
+Okamžitě změní existující objekt. Přijímá stejné parametry jako [`image`](#image) / [`label`](#label) (`id` vybírá objekt):
+`url` (obrázky), `text` / `html` (popisky; nový obsah nahradí starý), `x`, `y`, `xa`, `ya`, `visible`, `moveTo`, `styles`, `follow` (`null` sledování ukončí), `cssClass` (nahradí třídy; `null` je odebere), `fixed` (přesune objekt mezi scénu a pevnou vrstvu, tam nad ostatní objekty). Mění se jen zadané parametry; `styles` se přidávají ke stávajícím.
 
 ```json
 { "cmd": "set", "id": "app", "url": "./ps-002.png" }
@@ -298,6 +328,22 @@ Parametr `follow` u `image` / `set` udělá z obrázku **následovníka** jinéh
 Zoom zvětšuje **celou scénu** – kamera jen určuje, jaká její část je vidět; souřadnice `x`, `y` obrázků se nemění.
 Velikost kontejneru zůstává, co je mimo záběr, se ořízne. `%` v `x`/`y` se vždy vztahují k celé (nezoomované) scéně.
 Viz [`zoomTo`](#zoomto). Kamera se s každým `play()` a `reset()` vrací do výchozího stavu.
+Objekty s [`fixed`](#pevné-objekty-fixed) kamera neovlivňuje.
+
+## Pevné objekty: `fixed`
+
+`"fixed": true` (u `image` nebo `label`, i v `set`) vyjme objekt ze zoomované scény:
+**kamera (`zoomTo`) nemění ani jeho velikost, ani pozici** – zůstává tam, kde na obrazovce je, jako titulek nebo logo.
+
+```json
+{ "cmd": "label", "id": "caption", "text": "Krok 2", "x": "20px", "y": "20px", "fixed": true }
+```
+
+- `x`, `y` pevného objektu jsou **souřadnice na obrazovce** (kontejneru); `%` se vztahuje k velikosti kontejneru. Nejsou to souřadnice scény.
+- Pevné objekty se kreslí **nad** všemi běžnými, v pořadí přidání.
+- Kamera pevný objekt sledovat nemůže (`zoomTo` s `follow` nebo `zoomTo` pevného `id` je chyba).
+- `follow` a `moveTo` kopírují prosté hodnoty souřadnic, nepřevádějí mezi scénou a obrazovkou – pevný popisek sledující běžný obrázek se posune o stejný počet pixelů jako obrázek, ne o zoomovanou vzdálenost.
+- `slide`, `animate`, `visible`, `styles` a `cssClass` fungují jako u každého jiného objektu.
 
 ## Makra
 

@@ -23,10 +23,11 @@ Names you choose yourself (animations, macros, arguments, CSS classes, CSS prope
 - [Root keys](#root-keys)
 - [Overview of commands](#overview-of-commands)
 - [Positioning: `x`, `y`, `xa`, `ya`](#positioning)
-- [Commands](#commands): [`image`](#image) · [`set`](#set) · [`slide`](#slide) · [`pause`](#pause) · [`animate`](#animate) · [`subSteps`](#substeps) · [`await`](#await) · [`zoomTo`](#zoomto)
+- [Commands](#commands): [`image`](#image) · [`label`](#label) · [`set`](#set) · [`slide`](#slide) · [`pause`](#pause) · [`animate`](#animate) · [`subSteps`](#substeps) · [`await`](#await) · [`zoomTo`](#zoomto)
 - [Parallel steps: `async`, `awid`, `await`](#parallel-steps)
 - [Following: `follow`](#following-images-follow)
 - [Camera and zoom](#camera-and-zoom)
+- [Fixed objects: `fixed`](#fixed-objects-fixed)
 - [Macros: `macros`, `call`](#macros)
 - [CSS classes: `cssClasses`, `cssClass`](#css-classes)
 - [`animations`](#animations)
@@ -63,7 +64,8 @@ Steps run **in order**; the next one starts when the previous one is finished.
 | `cmd` | What it does | Waits until |
 |-------|--------------|-------------|
 | [`image`](#image) | adds an image to the scene | immediately |
-| [`set`](#set) | changes an existing image instantly | immediately |
+| [`label`](#label) | adds a text / HTML label to the scene | immediately |
+| [`set`](#set) | changes an existing image or label instantly | immediately |
 | [`slide`](#slide) | smoothly moves an image | the movement ends |
 | [`pause`](#pause) | waits | the time elapses |
 | [`animate`](#animate) | plays a named animation on an image | immediately, or the animation ends (`wait`) |
@@ -73,6 +75,8 @@ Steps run **in order**; the next one starts when the previous one is finished.
 | [`call`](#call) | runs a [macro](#macros) with arguments | the macro finishes (unless `async`) |
 
 ## Positioning
+
+> Everything below (`x`, `y`, `xa`, `ya`, `moveTo`, `follow`, `visible`, `styles`, `cssClass`, `fixed`) works the same for **images** and **labels** – together they are called *objects*. The `id` of an object is shared by both kinds.
 
 Images are positioned inside the scene (the container element) by an **anchor point** `x`, `y`.
 `xa`/`ya` say which point *of the image* is placed on it.
@@ -98,17 +102,18 @@ Examples:
 
 Adds a new image to the scene. The image is later referred to by its `id`.
 
-| Key | Required | Meaning |
-|-----|:--------:|---------|
-| `id` | yes | identifier used by other commands |
-| `url` | yes | image address; relative addresses are resolved against the script's location (see `baseUrl`) |
-| `x`, `y` | no | position, see [Positioning](#positioning) |
-| `xa`, `ya` | no | alignment, see [Positioning](#positioning) |
-| `visible` | no | `true` (default) / `false` – hides the image without removing it |
-| `moveTo` | no | takes `x` and `y` from another image, see [`moveTo`](#moveto) |
-| `styles` | no | object of CSS properties applied to the image, e.g. `{ "opacity": 0 }` |
-| `follow` | no | `id` of another image: when that image moves, this one moves with it, see [Following](#following-images-follow) |
-| `cssClass` | no | a class name or an array of names from [`cssClasses`](#css-classes) |
+| Key        | Required | Meaning                                                                                                         |
+|------------|:--------:|-----------------------------------------------------------------------------------------------------------------|
+| `id`       |   yes    |  identifier used by other commands                                                                              |
+| `url`      |   yes    | image address; relative addresses are resolved against the script's location (see `baseUrl`)                    |
+| `x`, `y`   |    no    | position, see [Positioning](#positioning)                                                                       |
+| `xa`, `ya` |    no    | alignment, see [Positioning](#positioning)                                                                      |
+| `visible`  |    no    | `true` (default) / `false` – hides the image without removing it                                                |
+| `moveTo`   |    no    | takes `x` and `y` from another image, see [`moveTo`](#moveto)                                                   |
+| `styles`   |    no    | object of CSS properties applied to the image, e.g. `{ "opacity": 0 }`                                          |
+| `follow`   |    no    | `id` of another image: when that image moves, this one moves with it, see [Following](#following-images-follow) |
+| `cssClass` |    no    | a class name or an array of names from [`cssClasses`](#css-classes)                                             |
+| `fixed`    |    no    | `true` = not affected by the camera (`zoomTo`), see [Fixed objects](#fixed-objects-fixed) |
 
 ```json
 { "cmd": "image", "id": "cursor", "url": "./cursor.svg", "x": "50%", "y": "50%" }
@@ -130,10 +135,35 @@ Instead of writing coordinates you can refer to another image:
 { "cmd": "set", "id": "click", "moveTo": "cursor" }
 ```
 
+### `label`
+
+Adds a text label to the scene. It works like [`image`](#image) – it is positioned, moved (`slide`), followed (`follow`), styled (`styles`, `cssClass`) and animated (`animate`) the same way – except that:
+
+- it has **no `url`**,
+- it has **`text`** or **`html`** (one of them, not both),
+- its element is a `div`.
+
+| Key | Required | Meaning |
+|-----|:--------:|---------|
+| `id` | yes | identifier used by other commands |
+| `text` | one of | plain text; it is inserted as text, so `<` and `&` need no escaping. Line breaks (`\n`) are kept |
+| `html` | one of | formatted content (`<b>`, `<span style="...">`, ...) inserted as HTML |
+| `x`, `y`, `xa`, `ya`, `visible`, `moveTo`, `styles`, `follow`, `cssClass`, `fixed` | no | the same as in [`image`](#image) |
+
+```json
+{ "cmd": "label", "id": "title", "html": "<b>Step 1:</b> click <i>Save</i>", "x": "20px", "y": "20px",
+  "cssClass": "hud", "fixed": true }
+{ "cmd": "label", "id": "hint", "text": "Click here", "x": "50%", "y": "10%", "xa": "center" }
+```
+
+- The text does not wrap by default (`white-space: pre` for `text`, `nowrap` for `html`). Set `styles` (e.g. `{ "whiteSpace": "normal", "width": "200px" }`) for wrapping. The text inherits the font and colour of the page – define your look in [`cssClasses`](#css-classes) or `styles`.
+- **`html` is inserted as HTML without any check.** Use it only with scripts you trust (a script from an untrusted source could inject scripts – use `text` there).
+- Change the content later with [`set`](#set) and `text` / `html`; a `label` cannot be given `url`, an `image` cannot be given `text` / `html`.
+
 ### `set`
 
-Instantly changes an existing image. Accepts the same parameters as [`image`](#image) (except `id`, which selects the image):
-`url`, `x`, `y`, `xa`, `ya`, `visible`, `moveTo`, `styles`, `follow` (`null` stops following), `cssClass` (replaces the classes; `null` removes them). Only the given parameters change; `styles` are added to the existing ones.
+Instantly changes an existing object. Accepts the same parameters as [`image`](#image) / [`label`](#label) (except `id`, which selects the object):
+`url` (images), `text` / `html` (labels; the new content replaces the old one), `x`, `y`, `xa`, `ya`, `visible`, `moveTo`, `styles`, `follow` (`null` stops following), `cssClass` (replaces the classes; `null` removes them), `fixed` (moves the object between the scene and the fixed layer, on top of other objects there). Only the given parameters change; `styles` are added to the existing ones.
 
 ```json
 { "cmd": "set", "id": "app", "url": "./ps-002.png" }
@@ -298,6 +328,22 @@ The `follow` parameter of `image` / `set` makes the image a **follower** of anot
 Zooming enlarges the **whole scene** – the camera only decides which part of it is visible; the coordinates `x`, `y` of images do not change.
 The container's size stays the same and what is outside the view is cut off. `%` in `x`/`y` always relate to the whole (non-zoomed) scene.
 See [`zoomTo`](#zoomto). The camera is reset on every `play()` and `reset()`.
+Objects with [`fixed`](#fixed-objects-fixed) are not affected by the camera.
+
+## Fixed objects: `fixed`
+
+`"fixed": true` (on an `image` or `label`, also in `set`) takes the object out of the zoomed scene:
+**neither its size nor its position is changed by the camera** (`zoomTo`) – it stays where it is on the screen, like a caption or a logo.
+
+```json
+{ "cmd": "label", "id": "caption", "text": "Step 2", "x": "20px", "y": "20px", "fixed": true }
+```
+
+- `x`, `y` of a fixed object are **screen coordinates** (of the container); `%` relates to the container's size. They are not scene coordinates.
+- Fixed objects are drawn **above** all normal ones, in the order they were added.
+- The camera cannot follow a fixed object (`zoomTo` with `follow` or `zoomTo` of a fixed `id` is an error).
+- `follow` and `moveTo` copy plain coordinate values, they do not convert between the scene and the screen – a fixed label that follows a normal image moves by the same number of pixels as the image, not by the zoomed distance.
+- `slide`, `animate`, `visible`, `styles` and `cssClass` work as with any other object.
 
 ## Macros
 

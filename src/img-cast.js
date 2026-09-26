@@ -192,6 +192,11 @@ export class ImgCast extends EventTarget {
     world.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0';
     this.world = world;
     this.container.appendChild(world);
+    // vrstva `fixed` objektů: nad světem, bez kamery (zoom ani posun ji neovlivní)
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none';
+    this.overlay = overlay;
+    this.container.appendChild(overlay);
     this._mkCssClasses(world);
     // kamera: střed jako odchylka od středu scény (nezávislé na velikosti kontejneru), zoom
     this._cam = { z: 1, ox: 0, oy: 0, follow: null, motion: null, raf: null };
@@ -414,7 +419,8 @@ export class ImgCast extends EventTarget {
   async _run(step, signal, path) {
     switch (step.cmd) {
       case 'image':
-        return this._image(step);
+      case 'label':
+        return this._create(step);
       case 'set':
         return this._set(step);
       case 'slide':
@@ -463,7 +469,7 @@ export class ImgCast extends EventTarget {
 
   _get(id) {
     const rec = this.images.get(id);
-    if (!rec) throw new Error(`img-cast: neznámé id obrázku "${id}"`);
+    if (!rec) throw new Error(`img-cast: neznámé id objektu "${id}"`);
     return rec;
   }
 
@@ -542,14 +548,20 @@ export class ImgCast extends EventTarget {
     return { dx, dy, distance: Math.hypot(dx, dy) };
   }
 
-  _image(step) {
+  /** Vytvoří objekt scény: `image` (obrázek) nebo `label` (text / html). */
+  _create(step) {
+    const kind = step.cmd === 'label' ? 'label' : 'image';
     const el = document.createElement('div');
     el.style.position = 'absolute';
-    const img = document.createElement('img');
-    img.style.display = 'block';
-    img.draggable = false;
-    el.appendChild(img);
-    const rec = { el, img, xa: 0, ya: 0 };
+    const inner = document.createElement(kind === 'label' ? 'div' : 'img');
+    if (kind === 'label') {
+      inner.style.whiteSpace = step.html !== undefined ? 'nowrap' : 'pre'; // výchozí, přebijí ho `styles`
+    } else {
+      inner.style.display = 'block';
+      inner.draggable = false;
+    }
+    el.appendChild(inner);
+    const rec = { el, img: inner, kind, xa: 0, ya: 0, fixed: false };
     this.images.set(step.id, rec);
     this.world.appendChild(el);
     this._apply(rec, { x: 0, y: 0, ...this._withMoveTo(step) });
@@ -563,10 +575,25 @@ export class ImgCast extends EventTarget {
     this._apply(rec, p);
   }
 
-  /** Aplikuje parametry (url, x, y, xa, ya, visible, styles, follow, cssClass) na obrázek. */
+  /** Aplikuje parametry (url, text, html, x, y, xa, ya, visible, styles, follow, cssClass, fixed) na obrázek. */
   _apply(rec, p) {
     const { el, img } = rec;
-    if (p.url !== undefined) img.src = this._url(p.url);
+    if (p.url !== undefined) {
+      if (rec.kind !== 'image') throw new Error('img-cast: label nemá parametr url');
+      img.src = this._url(p.url);
+    }
+    if (p.text !== undefined || p.html !== undefined) {
+      if (rec.kind !== 'label') throw new Error('img-cast: text a html má jen label');
+      if (p.text !== undefined && p.html !== undefined) {
+        throw new Error('img-cast: label má mít text nebo html, ne obojí');
+      }
+      if (p.text !== undefined) img.textContent = String(p.text);
+      else img.innerHTML = String(p.html);
+    }
+    if (p.fixed !== undefined && Boolean(p.fixed) !== rec.fixed) {
+      rec.fixed = Boolean(p.fixed);
+      (rec.fixed ? this.overlay : this.world).appendChild(el); // přesun nad ostatní objekty vrstvy
+    }
     if (p.xa !== undefined) rec.xa = toAlignPercent(p.xa, ALIGN_X, 0);
     if (p.ya !== undefined) rec.ya = toAlignPercent(p.ya, ALIGN_Y, 0);
     if (p.x !== undefined) el.style.left = toCssLength(p.x);
@@ -643,6 +670,11 @@ export class ImgCast extends EventTarget {
     return { ox: from.ox + shift(p.x, cx, hx), oy: from.oy + shift(p.y, cy, hy) };
   }
 
+  /** Kamera nemůže mířit na `fixed` objekt – ten je mimo svět, nemá pozici ve scéně. */
+  _checkCameraTarget(id) {
+    if (this._get(id).fixed) throw new Error(`img-cast: kamera nemůže sledovat fixed objekt "${id}"`);
+  }
+
   async _zoomTo(step, signal) {
     const cam = this._cam;
     const { w, h } = this._size();
@@ -662,9 +694,10 @@ export class ImgCast extends EventTarget {
     if (retarget) {
       followId = null;
       if (step.follow) {
-        this._get(step.follow);
+        this._checkCameraTarget(step.follow);
         followId = step.follow;
       } else if (step.zoomTo !== undefined) {
+        this._checkCameraTarget(step.zoomTo);
         fixed = this._pos(this._get(step.zoomTo));
       } else {
         fixed = {

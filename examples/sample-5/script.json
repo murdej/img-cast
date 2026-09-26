@@ -1,0 +1,56 @@
+{
+  "slideSpeed": "500pps",
+  "zoomSpeed": "1s",
+  "cssClasses": {
+    "hud": {
+      "background": "rgba(20, 30, 50, 0.85)",
+      "color": "#fff",
+      "font": "600 18px/1.3 system-ui, sans-serif",
+      "padding": "8px 14px",
+      "borderRadius": "8px"
+    },
+    "note": {
+      "background": "#fff6bf",
+      "color": "#5a4a00",
+      "font": "14px/1.3 system-ui, sans-serif",
+      "padding": "4px 8px",
+      "border": "1px solid #d8c24a",
+      "borderRadius": "4px"
+    },
+    "tip": {
+      "background": "#c62828",
+      "color": "#fff",
+      "font": "12px/1.2 system-ui, sans-serif",
+      "padding": "3px 7px",
+      "borderRadius": "10px"
+    }
+  },
+  "steps": [
+    { "cmd": "image", "id": "app", "url": "../sample-1/ps-001.png" },
+    { "cmd": "image", "id": "cursor", "url": "../sample-1/cursor.svg", "x": "10%", "y": "10%" },
+
+    { "cmd": "label", "id": "title", "cssClass": "hud", "fixed": true, "x": "16px", "y": "16px",
+      "html": "<span style=\"color:#8fd3ff\">Popisky</span> a <b>pevné objekty</b>" },
+    { "cmd": "label", "id": "note", "cssClass": "note", "x": "300px", "y": "230px",
+      "text": "Běžný popisek:\nzoom ho zvětší i posune" },
+    { "cmd": "label", "id": "tip", "cssClass": "tip", "moveTo": "cursor", "xa": "-30%", "ya": "-140%",
+      "follow": "cursor", "text": "kurzor" },
+
+    { "cmd": "slide", "id": "cursor", "x": "300px", "y": "200px", "timingFunction": "ease-in-out" },
+    { "cmd": "set", "id": "tip", "text": "tady je poznámka" },
+    { "cmd": "pause", "duration": 500 },
+
+    { "cmd": "zoomTo", "zoom": 2.5, "zoomTo": "cursor", "duration": 1000, "timingFunction": "ease-in-out" },
+    { "cmd": "set", "id": "title", "html": "Zoom <b>2.5×</b> – tento titulek je <i>fixed</i>" },
+    { "cmd": "pause", "duration": 1200 },
+
+    { "cmd": "zoomTo", "follow": "cursor", "nzax": "40%", "nzay": "40%", "duration": 500 },
+    { "cmd": "slide", "id": "cursor", "x": "700px", "y": "300px", "timingFunction": "ease-in-out" },
+    { "cmd": "set", "id": "tip", "text": "kurzor odjel, kamera za ním" },
+    { "cmd": "pause", "duration": 800 },
+
+    { "cmd": "zoomTo", "zoom": 1, "x": "50%", "y": "50%" },
+    { "cmd": "set", "id": "title", "html": "Zpátky na <b>1×</b>" },
+    { "cmd": "pause", "duration": 800 }
+  ]
+}

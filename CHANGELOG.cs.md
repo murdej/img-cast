@@ -6,6 +6,14 @@ Formát vychází z [Keep a Changelog](https://keepachangelog.com/cs/1.1.0/), ve
 
 ## [Unreleased]
 
+### Added
+- Příkaz `label`: textové (`text`) nebo HTML (`html`) popisky; umisťují se, posouvají, sledují a stylizují jako obrázky, jen bez `url`.
+- Parametr `fixed` (`image`, `label`, `set`): objekt kamera neovlivňuje – zoom (`zoomTo`) nemění ani jeho velikost, ani pozici.
+- `set` umí měnit `text` / `html` popisků a přepínat `fixed`.
+- Ukázka `examples/sample-5` (popisky, `fixed`).
+
+## [1.1.0] - 2026-09-26
+
 ### Changed
 - **Primární formát scriptu je nově `camelCase`**: `moveTo`, `timingFunction`, `slideSpeed`, `zoomSpeed`, `zoomTo` (parametr i příkaz `zoomTo`), příkaz `subSteps`. Scripty v dosavadním `kebab-case` (`move-to`, `timing-function`, `slide-speed`, `zoom-speed`, `zoom-to`, `sub-steps`) se dál načtou – převedou se automaticky (konstruktor, `ImgCast.load`, exportovaná `normalizeScript`). Ukázky a dokumentace používají `camelCase`.
 - `ImgCast#script` nově obsahuje normalizovaný (camelCase) script.

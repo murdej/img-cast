@@ -65,7 +65,7 @@ A modern browser (ES modules, `Element.animate`, `EventTarget`). The library tou
 
 ## Example
 
-`examples/index.html` in the repository (`sample-1` basics, `sample-2` async/await, `sample-3` follow and zoom, `sample-4` macros, CSS classes, loop) – serve it over HTTP (modules and `fetch` do not work over `file://`):
+`examples/index.html` in the repository (`sample-1` basics, `sample-2` async/await, `sample-3` follow and zoom, `sample-4` macros, CSS classes, loop, `sample-5` labels and fixed objects) – serve it over HTTP (modules and `fetch` do not work over `file://`):
 
 ```sh
 python3 -m http.server   # then open /examples/

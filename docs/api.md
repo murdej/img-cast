@@ -7,19 +7,21 @@ Script format: [script-format.md](script-format.md). Types: `src/img-cast.d.ts`.
 ## Model
 
 The player renders the scene into `container`. The container gets `overflow: hidden` and (unless it already has another one) `position: relative`.
-The container holds one inner layer (the "world", moved and scaled by `zoomTo`), and every `image` in it is a pair of elements:
+The container holds two layers: the "world" (moved and scaled by `zoomTo`) and above it an unscaled layer for objects with `fixed: true`.
+Every `image` / `label` lives in one of them as a pair of elements:
 
 ```
-<div>   ← wrapper: position:absolute, left/top (x, y), translate from xa/ya, visibility
-  <img> ← image: `styles` and CSS animations (`animate`)
+<div>       ← wrapper: position:absolute, left/top (x, y), translate from xa/ya, visibility
+  <img>     ← image: `styles`, `cssClass` and CSS animations (`animate`)
+  <div>     ← (a label has a div instead of the img: text / html)
 </div>
 ```
 
-Positioning (`slide`, `set`, `moveTo`) is therefore handled by the wrapper, and appearance/animation by the `img`,
+Positioning (`slide`, `set`, `moveTo`) is therefore handled by the wrapper, and appearance/animation by the inner element,
 so they don't interfere (e.g. `transform: scale()` in an animation doesn't break alignment).
 
 Steps run sequentially, unless a `slide` or `subSteps` has `async: true` – then the script continues right away and
-`await` can wait for it later (see [script-format.md](script-format.md#parallel-steps)). A step finishes immediately (`image`, `set`), after `duration` elapses (`slide`, `pause`)
+`await` can wait for it later (see [script-format.md](script-format.md#parallel-steps)). A step finishes immediately (`image`, `label`, `set`), after `duration` elapses (`slide`, `pause`)
 or – for `animate` – only with `"wait": true`; without it the animation runs in the background and the script continues.
 
 ## `new ImgCast(container, script, options?)`
@@ -125,6 +127,7 @@ Similarly in Vue (`onMounted`/`onBeforeUnmount`) or Svelte (`onMount`).
 ## Limitations
 
 - Requires a DOM (browser). Importing in Node.js (SSR) works, the constructor does not.
+- A label's `html` is assigned to `innerHTML` without sanitizing – never pass untrusted scripts with `html` (use `text`).
 - The camera (`zoomTo`) is implemented as a CSS transform of an inner layer, animated with `requestAnimationFrame`; resizing the container during a zoomed scene is applied the next time the camera moves.
 - `follow` uses each image's current computed position, so an image being moved by a slide is followed live.
 - `awid` names are global per playback; they are cleared on every `play()`.
