@@ -1,0 +1,188 @@
+{
+  "steps": [
+    {
+      "cmd": "image",
+      "id": "app",
+      "url": "./ps-001.png"
+    },
+    {
+      "cmd": "image",
+      "id": "cursor",
+      "url": "./cursor.svg",
+      "xa": "left",
+      "ya": "top",
+      "visible": true,
+      "x": "50%",
+      "y": "50%"
+    },
+    {
+      "cmd": "image",
+      "id": "click",
+      "url": "./mark.svg",
+      "x": "-100%",
+      "y": "0",
+      "xa": "center",
+      "ya": "center",
+      "styles": {
+        "opacity": 0
+      }
+    },
+    {
+      "cmd": "slide",
+      "id": "cursor",
+      "x": "910px",
+      "y": "184px",
+      "duration": 500,
+      "timing-function": "ease-in"
+    },
+    {
+      "cmd": "set",
+      "id": "click",
+      "move-to": "cursor"
+    },
+    {
+      "cmd": "animate",
+      "id": "click",
+      "animation": "click",
+      "wait": true
+    },
+
+
+    {
+      "cmd": "set",
+      "id": "app",
+      "url": "./ps-002.png"
+    },
+    {
+      "cmd": "pause",
+      "duration": 500
+    },
+    {
+      "cmd": "slide",
+      "id": "cursor",
+      "duration": 500,
+      "timing-function": "ease-in",
+      "x": "339px",
+      "y": "586px"
+    },
+    {
+      "cmd": "set",
+      "id": "click",
+      "move-to": "cursor"
+    },
+    {
+      "cmd": "animate",
+      "id": "click",
+      "animation": "click",
+      "wait": true
+    },
+
+
+    {
+      "cmd": "set",
+      "id": "app",
+      "url": "./ps-003.png"
+    },
+    {
+      "cmd": "slide",
+      "id": "cursor",
+      "duration": 500,
+      "timing-function": "ease-in",
+      "x": "944px",
+      "y": "114px"
+    },
+    {
+      "cmd": "set",
+      "id": "click",
+      "move-to": "cursor"
+    },
+    {
+      "cmd": "animate",
+      "id": "click",
+      "animation": "click",
+      "wait": true
+    },
+
+
+    {
+      "cmd": "set",
+      "id": "app",
+      "url": "./ps-004.png"
+    },
+    {
+      "cmd": "slide",
+      "id": "cursor",
+      "duration": 500,
+      "timing-function": "ease-in",
+      "x": "959px",
+      "y": "132px"
+    },
+    {
+      "cmd": "set",
+      "id": "click",
+      "move-to": "cursor"
+    },
+    {
+      "cmd": "animate",
+      "id": "click",
+      "animation": "click",
+      "wait": true
+    },
+
+
+
+    {
+      "cmd": "set",
+      "id": "app",
+      "url": "./ps-005.png"
+    },
+    {
+      "cmd": "slide",
+      "id": "cursor",
+      "duration": 500,
+      "timing-function": "ease-in",
+      "x": "377px",
+      "y": "540px"
+    },
+    {
+      "cmd": "set",
+      "id": "click",
+      "move-to": "cursor"
+    },
+    {
+      "cmd": "animate",
+      "id": "click",
+      "animation": "click",
+      "wait": true
+    },
+
+
+    {
+      "cmd": "set",
+      "id": "app",
+      "url": "./ps-006.png"
+    }
+  ],
+  "animations": {
+    "click": {
+      "0%": {
+        "transform": "scale(20)",
+        "opacity": 0
+      },
+      "50%": {
+        "transform": "scale(20)",
+        "opacity": 1
+      },
+      "95%": {
+        "transform": "scale(1)",
+        "opacity": 0
+      },
+      "100%": {
+        "transform": "scale(1)",
+        "opacity": 0
+      },
+      "timing-function": "linear",
+      "duration": 500
+    }
+  }
+}

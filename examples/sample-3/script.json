@@ -1,0 +1,39 @@
+{
+  "slide-speed": "500pps",
+  "zoom-speed": "1s",
+  "steps": [
+    { "cmd": "image", "id": "app", "url": "../sample-1/ps-001.png" },
+    { "cmd": "image", "id": "cursor", "url": "../sample-1/cursor.svg", "x": "10%", "y": "10%" },
+    { "cmd": "image", "id": "badge", "url": "../sample-1/mark.svg", "x": "40px", "y": "0", "xa": "center", "ya": "center",
+      "follow": "cursor", "styles": { "opacity": 0.7 } },
+    { "cmd": "image", "id": "click", "url": "../sample-1/mark.svg", "x": "-100%", "y": "0",
+      "xa": "center", "ya": "center", "styles": { "opacity": 0 } },
+
+    { "cmd": "slide", "id": "cursor", "x": "300px", "y": "200px", "timing-function": "ease-in-out" },
+
+    { "cmd": "zoom-to", "zoom": 2.5, "zoom-to": "cursor", "duration": 900, "timing-function": "ease-in-out" },
+    { "cmd": "zoom-to", "follow": "cursor", "nzax": "40%", "nzay": "40%", "duration": 500 },
+
+    { "cmd": "slide", "id": "cursor", "x": "380px", "y": "240px", "timing-function": "ease-in-out" },
+    { "cmd": "slide", "id": "cursor", "x": "700px", "y": "300px", "timing-function": "ease-in-out" },
+    { "cmd": "slide", "id": "cursor", "x": "900px", "y": "550px", "timing-function": "ease-in-out" },
+    { "cmd": "set", "id": "click", "move-to": "cursor" },
+    { "cmd": "animate", "id": "click", "animation": "click", "wait": true },
+
+    { "cmd": "set", "id": "badge", "follow": null },
+    { "cmd": "slide", "id": "cursor", "x": "50%", "y": "50%", "async": true, "awid": "back" },
+    { "cmd": "zoom-to", "zoom": 1, "x": "50%", "y": "50%" },
+    { "cmd": "await", "awid": "back" },
+    { "cmd": "pause", "duration": 500 }
+  ],
+  "animations": {
+    "click": {
+      "0%": { "transform": "scale(20)", "opacity": 0 },
+      "50%": { "transform": "scale(20)", "opacity": 1 },
+      "95%": { "transform": "scale(1)", "opacity": 1 },
+      "100%": { "transform": "scale(1)", "opacity": 0 },
+      "timing-function": "linear",
+      "duration": 500
+    }
+  }
+}

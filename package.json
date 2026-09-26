@@ -1,0 +1,60 @@
+{
+  "name": "img-cast",
+  "version": "1.1.0",
+  "description": "Framework-independent player of image-based animations (screencasts) described by a JSON script.",
+  "keywords": [
+    "animation",
+    "screencast",
+    "player",
+    "images",
+    "tutorial",
+    "web-animations"
+  ],
+  "author": "vit.peprnicek@gmail.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/murdej/img-cast.git"
+  },
+  "homepage": "https://github.com/murdej/img-cast#readme",
+  "bugs": {
+    "url": "https://github.com/murdej/img-cast/issues"
+  },
+  "license": "ISC",
+  "type": "module",
+  "main": "./src/img-cast.js",
+  "module": "./src/img-cast.js",
+  "types": "./src/img-cast.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/img-cast.d.ts",
+      "default": "./src/img-cast.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "files": [
+    "src",
+    "docs",
+    "README.md",
+    "README.cs.md",
+    "CHANGELOG.md",
+    "CHANGELOG.cs.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "node --check src/img-cast.js",
+    "test": "pnpm run check",
+    "prepublishOnly": "pnpm run check"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.6.0",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.6.0"
+}

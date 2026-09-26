@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>img-cast – ukázka</title>
+  <style>
+    body { font-family: sans-serif; margin: 16px; }
+    #stage { width: 1107px; height: 714px; max-width: 100%; border: 1px solid #888; background: #fff; }
+    .bar { margin-bottom: 8px; display: flex; gap: 8px; align-items: center; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <button id="play">Přehrát</button>
+    <button id="stop">Stop</button>
+    <button id="reset">Reset</button>
+    <label>Ukázka
+      <select id="sample">
+        <option value="./sample-1/script.json">1 – základní</option>
+        <option value="./sample-2/script.json">2 – async / await</option>
+        <option value="./sample-3/script.json">3 – follow / zoom-to</option>
+      </select>
+    </label>
+    <label>Rychlost
+      <select id="speed">
+        <option value="0.25">0.25×</option><option value="0.5">0.5×</option>
+        <option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option>
+      </select>
+    </label>
+    <span id="status"></span>
+  </div>
+  <div id="stage"></div>
+
+  <script type="module">
+    import { ImgCast } from '../src/img-cast.js';
+
+    const status = document.getElementById('status');
+    const stage = document.getElementById('stage');
+    const speedSelect = document.getElementById('speed');
+    let cast;
+
+    async function load(url) {
+      cast?.reset();
+      cast = await ImgCast.load(stage, url, { speed: speedSelect.value });
+      cast.addEventListener('step', (e) => (status.textContent = `krok ${e.detail.path.map((i) => i + 1).join('.')}: ${e.detail.step.cmd}`));
+      cast.addEventListener('end', () => (status.textContent = 'hotovo'));
+      window.cast = cast;
+    }
+    await load(document.getElementById('sample').value);
+    document.getElementById('sample').onchange = async (e) => { status.textContent = ''; await load(e.target.value); };
+
+    document.getElementById('play').onclick = () => cast.play();
+    document.getElementById('stop').onclick = () => cast.stop();
+    document.getElementById('reset').onclick = () => { cast.reset(); status.textContent = ''; };
+    speedSelect.onchange = (e) => (cast.speed = e.target.value);
+  </script>
+</body>
+</html>

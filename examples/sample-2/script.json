@@ -1,0 +1,36 @@
+{
+  "steps": [
+    { "cmd": "image", "id": "app", "url": "../sample-1/ps-001.png" },
+    { "cmd": "image", "id": "marker", "url": "../sample-1/mark.svg", "x": "900px", "y": "600px", "xa": "center", "ya": "center" },
+    { "cmd": "image", "id": "cursor", "url": "../sample-1/cursor.svg", "x": "50px", "y": "50px" },
+    { "cmd": "image", "id": "click", "url": "../sample-1/mark.svg", "x": "-100%", "y": "0",
+      "xa": "center", "ya": "center", "styles": { "opacity": 0 } },
+
+    { "cmd": "slide", "id": "marker", "x": "500px", "y": "300px", "duration": 1500, "timing-function": "ease-in-out",
+      "async": true, "awid": "marker" },
+    { "cmd": "slide", "id": "cursor", "x": "300px", "y": "200px", "duration": 800, "timing-function": "ease-in" },
+    { "cmd": "await", "awid": "marker" },
+
+    { "cmd": "sub-steps", "async": true, "awid": "clicks", "steps": [
+      { "cmd": "set", "id": "click", "move-to": "marker" },
+      { "cmd": "animate", "id": "click", "animation": "click", "wait": true },
+      { "cmd": "pause", "duration": 200 },
+      { "cmd": "animate", "id": "click", "animation": "click", "wait": true }
+    ] },
+    { "cmd": "slide", "id": "cursor", "x": "900px", "y": "500px", "duration": 1000, "timing-function": "ease-out" },
+    { "cmd": "await", "awid": "clicks" },
+
+    { "cmd": "set", "id": "app", "url": "../sample-1/ps-002.png" },
+    { "cmd": "pause", "duration": 500 }
+  ],
+  "animations": {
+    "click": {
+      "0%": { "transform": "scale(20)", "opacity": 0 },
+      "50%": { "transform": "scale(20)", "opacity": 1 },
+      "95%": { "transform": "scale(1)", "opacity": 1 },
+      "100%": { "transform": "scale(1)", "opacity": 0 },
+      "timing-function": "linear",
+      "duration": 500
+    }
+  }
+}
