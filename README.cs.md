@@ -37,7 +37,7 @@ Příklad scriptu:
   "steps": [
     { "cmd": "image", "id": "app", "url": "./ps-001.png" },
     { "cmd": "image", "id": "cursor", "url": "./cursor.svg", "x": "50%", "y": "50%" },
-    { "cmd": "slide", "id": "cursor", "x": "100px", "y": "100px", "duration": 500, "timing-function": "ease-in" },
+    { "cmd": "slide", "id": "cursor", "x": "100px", "y": "100px", "duration": 500, "timingFunction": "ease-in" },
     { "cmd": "pause", "duration": 500 }
   ]
 }
@@ -47,12 +47,15 @@ Příklad scriptu:
 
 | Člen | Popis |
 |------|-------|
-| `new ImgCast(container, script, { baseUrl, speed })` | vytvoří přehrávač |
+| `new ImgCast(container, script, { baseUrl, speed, loop })` | vytvoří přehrávač |
 | `ImgCast.load(container, url, options)` | načte script přes `fetch`, `baseUrl` = adresa scriptu |
+| `preload()` | přednačte všechny obrázky scriptu |
 | `play()` | přehraje od začátku, Promise skončí s koncem |
 | `stop()` / `reset()` | zastaví / zastaví a vyčistí scénu |
 | `speed` | rychlost přehrávání (1 = normální, 2 = dvakrát rychleji) |
-| události `step`, `end` | průběh přehrávání |
+| `loop` | `true` = donekonečna, číslo = celkový počet přehrání |
+| události `step`, `loop`, `end` | průběh přehrávání |
+| `defineScript()`, `normalizeScript()` | pomocník pro TypeScript, starší `kebab-case` → `camelCase` |
 
 Úplná dokumentace: [docs/api.cs.md](docs/api.cs.md), formát scriptu: [docs/script-format.cs.md](docs/script-format.cs.md).
 
@@ -62,7 +65,7 @@ Moderní prohlížeč (ES moduly, `Element.animate`, `EventTarget`). Knihovna sa
 
 ## Ukázka
 
-`examples/index.html` v repozitáři (`sample-1` základy, `sample-2` async/await, `sample-3` follow a zoom) – spustit přes HTTP server (moduly a `fetch` nefungují přes `file://`):
+`examples/index.html` v repozitáři (`sample-1` základy, `sample-2` async/await, `sample-3` follow a zoom, `sample-4` makra, CSS třídy, smyčka) – spustit přes HTTP server (moduly a `fetch` nefungují přes `file://`):
 
 ```sh
 python3 -m http.server   # a otevřít /examples/

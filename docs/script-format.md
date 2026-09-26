@@ -8,18 +8,27 @@ A script is a JSON file that describes a scene: which images appear, where they 
 {
   "steps": [ /* commands, executed one after another */ ],
   "animations": { /* named CSS animations, optional */ },
-  "slide-speed": "400pps",  /* optional, see Root keys */
-  "zoom-speed": "1s"        /* optional, see Root keys */
+  "macros": { /* reusable groups of steps, optional */ },
+  "cssClasses": { /* CSS classes for images, optional */ },
+  "slideSpeed": "400pps",  /* optional, see Root keys */
+  "zoomSpeed": "1s"        /* optional, see Root keys */
 }
 ```
+
+**Naming:** all keys are `camelCase` (`moveTo`, `timingFunction`, `slideSpeed`, `subSteps`, `cssClass`, ...).
+Scripts in the older `kebab-case` (`move-to`, `timing-function`, `sub-steps`, `zoom-to`, ...) still load –
+they are converted automatically when the script is loaded (see `normalizeScript` in the [API](api.md)).
+Names you choose yourself (animations, macros, arguments, CSS classes, CSS properties) are never converted.
 
 - [Root keys](#root-keys)
 - [Overview of commands](#overview-of-commands)
 - [Positioning: `x`, `y`, `xa`, `ya`](#positioning)
-- [Commands](#commands): [`image`](#image) · [`set`](#set) · [`slide`](#slide) · [`pause`](#pause) · [`animate`](#animate) · [`sub-steps`](#sub-steps) · [`await`](#await) · [`zoom-to`](#zoom-to)
+- [Commands](#commands): [`image`](#image) · [`set`](#set) · [`slide`](#slide) · [`pause`](#pause) · [`animate`](#animate) · [`subSteps`](#substeps) · [`await`](#await) · [`zoomTo`](#zoomto)
 - [Parallel steps: `async`, `awid`, `await`](#parallel-steps)
 - [Following: `follow`](#following-images-follow)
 - [Camera and zoom](#camera-and-zoom)
+- [Macros: `macros`, `call`](#macros)
+- [CSS classes: `cssClasses`, `cssClass`](#css-classes)
 - [`animations`](#animations)
 - [Complete example](#complete-example)
 
@@ -29,17 +38,19 @@ A script is a JSON file that describes a scene: which images appear, where they 
 |-----|---------|
 | `steps` | list of [commands](#commands) |
 | `animations` | named [animations](#animations) for `animate` |
-| `slide-speed` | default speed of every [`slide`](#slide) **without** `duration` (see below) |
-| `zoom-speed` | default speed of every [`zoom-to`](#zoom-to) **without** `duration` (see below) |
+| `macros` | reusable groups of steps for [`call`](#call), see [Macros](#macros) |
+| `cssClasses` | CSS classes for the `cssClass` parameter of images, see [CSS classes](#css-classes) |
+| `slideSpeed` | default speed of every [`slide`](#slide) **without** `duration` (see below) |
+| `zoomSpeed` | default speed of every [`zoomTo`](#zoomto) **without** `duration` (see below) |
 
-`slide-speed` and `zoom-speed` have the same format – a number with a unit:
+`slideSpeed` and `zoomSpeed` have the same format – a number with a unit:
 
 | Value | Meaning | Example |
 |-------|---------|---------|
 | `(number)s`, `(number)ms` | every movement takes this fixed time | `"1.5s"`, `"800ms"` |
 | `(number)pps`, `(number)ppms` | constant speed in pixels per second / millisecond; the time is `distance / speed` | `"400pps"` |
 
-The distance of a `slide` is the length of the move in pixels. The distance of a `zoom-to` is the distance the camera centre
+The distance of a `slide` is the length of the move in pixels. The distance of a `zoomTo` is the distance the camera centre
 travels; if only the zoom changes (the centre stays), it is the difference of the visible scene area (the diagonal of the change of the visible width and height).
 An explicit `duration` in the step always wins. Without `duration` and without the matching root key the step is instant.
 A wrong value (e.g. `"fast"`) is an error when `play()` starts.
@@ -56,9 +67,10 @@ Steps run **in order**; the next one starts when the previous one is finished.
 | [`slide`](#slide) | smoothly moves an image | the movement ends |
 | [`pause`](#pause) | waits | the time elapses |
 | [`animate`](#animate) | plays a named animation on an image | immediately, or the animation ends (`wait`) |
-| [`sub-steps`](#sub-steps) | runs a nested list of steps | all nested steps finish (unless `async`) |
+| [`subSteps`](#substeps) | runs a nested list of steps | all nested steps finish (unless `async`) |
 | [`await`](#await) | waits for `async` steps | the given `awid`s finish |
-| [`zoom-to`](#zoom-to) | moves / zooms the "camera" | the movement ends (unless `async`) |
+| [`zoomTo`](#zoomto) | moves / zooms the "camera" | the movement ends (unless `async`) |
+| [`call`](#call) | runs a [macro](#macros) with arguments | the macro finishes (unless `async`) |
 
 ## Positioning
 
@@ -93,9 +105,10 @@ Adds a new image to the scene. The image is later referred to by its `id`.
 | `x`, `y` | no | position, see [Positioning](#positioning) |
 | `xa`, `ya` | no | alignment, see [Positioning](#positioning) |
 | `visible` | no | `true` (default) / `false` – hides the image without removing it |
-| `move-to` | no | takes `x` and `y` from another image, see [`move-to`](#move-to) |
+| `moveTo` | no | takes `x` and `y` from another image, see [`moveTo`](#moveto) |
 | `styles` | no | object of CSS properties applied to the image, e.g. `{ "opacity": 0 }` |
 | `follow` | no | `id` of another image: when that image moves, this one moves with it, see [Following](#following-images-follow) |
+| `cssClass` | no | a class name or an array of names from [`cssClasses`](#css-classes) |
 
 ```json
 { "cmd": "image", "id": "cursor", "url": "./cursor.svg", "x": "50%", "y": "50%" }
@@ -103,7 +116,7 @@ Adds a new image to the scene. The image is later referred to by its `id`.
 
 Images are stacked in the order they were added – later ones are on top.
 
-#### `move-to`
+#### `moveTo`
 
 Instead of writing coordinates you can refer to another image:
 
@@ -114,13 +127,13 @@ Instead of writing coordinates you can refer to another image:
 - the move is instant; use [`slide`](#slide) for a smooth one.
 
 ```json
-{ "cmd": "set", "id": "click", "move-to": "cursor" }
+{ "cmd": "set", "id": "click", "moveTo": "cursor" }
 ```
 
 ### `set`
 
 Instantly changes an existing image. Accepts the same parameters as [`image`](#image) (except `id`, which selects the image):
-`url`, `x`, `y`, `xa`, `ya`, `visible`, `move-to`, `styles`, `follow` (`null` stops following). Only the given parameters change; `styles` are added to the existing ones.
+`url`, `x`, `y`, `xa`, `ya`, `visible`, `moveTo`, `styles`, `follow` (`null` stops following), `cssClass` (replaces the classes; `null` removes them). Only the given parameters change; `styles` are added to the existing ones.
 
 ```json
 { "cmd": "set", "id": "app", "url": "./ps-002.png" }
@@ -134,16 +147,16 @@ Smoothly moves an image to a new position.
 |-----|:--------:|---------|
 | `id` | yes | which image moves |
 | `x`, `y` | no | target position (the one you omit does not change) |
-| `move-to` | no | move to the position of another image (`x`/`y` take precedence) |
-| `duration` | no | duration in ms; without it [`slide-speed`](#root-keys) applies, otherwise `0` = instant |
-| `timing-function` | no | CSS timing function: `linear` (default), `ease`, `ease-in`, `ease-out`, `ease-in-out`, `cubic-bezier(...)` |
+| `moveTo` | no | move to the position of another image (`x`/`y` take precedence) |
+| `duration` | no | duration in ms; without it [`slideSpeed`](#root-keys) applies, otherwise `0` = instant |
+| `timingFunction` | no | CSS timing function: `linear` (default), `ease`, `ease-in`, `ease-out`, `ease-in-out`, `cubic-bezier(...)` |
 | `async` | no | `true` = the next steps continue **at the same time** as the movement, see [Parallel steps](#parallel-steps) |
 | `awid` | no | name of the async step for [`await`](#await) (only meaningful with `async`) |
 
 The next step starts after the movement ends (unless `async` is `true`).
 
 ```json
-{ "cmd": "slide", "id": "cursor", "x": "100px", "y": "100px", "duration": 500, "timing-function": "ease-in" }
+{ "cmd": "slide", "id": "cursor", "x": "100px", "y": "100px", "duration": 500, "timingFunction": "ease-in" }
 ```
 
 ### `pause`
@@ -168,27 +181,27 @@ Plays an animation defined in [`animations`](#animations) on an image.
 | `animation` | yes | name of the animation from `animations` |
 | `wait` | no | `true` = wait for the animation to end before the next step; `false` (default) = it plays in the background |
 | `duration` | no | duration in ms; overrides the animation's default |
-| `timing-function` | no | CSS timing function; overrides the animation's default |
+| `timingFunction` | no | CSS timing function; overrides the animation's default |
 
 ```json
 { "cmd": "animate", "id": "click", "animation": "click", "wait": true }
 ```
 
-### `sub-steps`
+### `subSteps`
 
-A group of steps. It contains its own list of steps, in which further `sub-steps` can be nested to any depth.
+A group of steps. It contains its own list of steps, in which further `subSteps` can be nested to any depth.
 
 | Key | Required | Meaning |
 |-----|:--------:|---------|
 | `steps` | yes | list of steps, the same format as `steps` in the script root |
-| `async` | no | `true` = the steps that follow `sub-steps` continue **at the same time** as the group, see [Parallel steps](#parallel-steps) |
+| `async` | no | `true` = the steps that follow `subSteps` continue **at the same time** as the group, see [Parallel steps](#parallel-steps) |
 | `awid` | no | name of the async group for [`await`](#await) (only meaningful with `async`) |
 
-The steps inside run in order. Without `async` the next step after `sub-steps` starts when the whole group is finished
+The steps inside run in order. Without `async` the next step after `subSteps` starts when the whole group is finished
 (including its own async steps).
 
 ```json
-{ "cmd": "sub-steps", "async": true, "awid": "intro", "steps": [
+{ "cmd": "subSteps", "async": true, "awid": "intro", "steps": [
   { "cmd": "slide", "id": "cursor", "x": "100px", "duration": 500 },
   { "cmd": "pause", "duration": 200 }
 ] }
@@ -210,14 +223,14 @@ If the awaited step is already finished, `await` continues immediately. An `awid
 
 ## Parallel steps
 
-Normally the next step starts when the previous one is finished. The steps `slide`, `zoom-to` and `sub-steps` accept `async: true`:
+Normally the next step starts when the previous one is finished. The steps `slide`, `zoomTo`, `call` and `subSteps` accept `async: true`:
 they start and the script **continues immediately** with the next step, while they run in the background.
 
 - `awid` gives an async step a name. Names are shared by the whole script (also across nesting levels), so `await`
   can wait for a step defined in another group. Reusing a name replaces the earlier one.
 - [`await`](#await) waits for the named steps.
-- A list of steps (the root, or a `sub-steps` group) never ends before all its async steps have ended – so `end`
-  is fired (and a non-async `sub-steps` finishes) only after everything has run.
+- A list of steps (the root, or a `subSteps` group) never ends before all its async steps have ended – so `end`
+  is fired (and a non-async `subSteps` finishes) only after everything has run.
 - Two async `slide`s of the *same* image interfere – the later one wins. Move different images in parallel, or use `await`.
 - An error in an async step (e.g. an unknown `id`) is reported at the nearest `await` for it, or at the end of its list.
 
@@ -232,7 +245,7 @@ they start and the script **continues immediately** with the next step, while th
 
 The cursor and the panel move at the same time; the click starts when both have arrived.
 
-### `zoom-to`
+### `zoomTo`
 
 Moves and zooms the "camera" – the visible part of the scene. It affects **everything** in the scene (all images).
 At the start the camera shows the whole scene (zoom `1`, centre in the middle).
@@ -241,29 +254,29 @@ At the start the camera shows the whole scene (zoom `1`, centre in the middle).
 |-----|:--------:|---------|
 | `zoom` | no | magnification: `1` = whole scene, `2` = twice as large (half of the scene is visible); omitted = keeps the current zoom |
 | `x`, `y` | no | centre of the view in scene coordinates ([Positioning](#positioning) units); the omitted axis keeps its value |
-| `zoom-to` | no | `id` of an image: one-off set of the centre to that image's current position (like [`move-to`](#move-to)); `x`/`y` take precedence |
+| `zoomTo` | no | `id` of an image: one-off set of the centre to that image's current position (like [`moveTo`](#moveto)); `x`/`y` take precedence |
 | `follow` | no | `id` of an image: the centre **keeps following** it on every movement – even after the command has finished |
 | `nzax`, `nzay` | no | "no-zoom area": the size of the area around the centre of the view in which the followed point can move without moving the camera; `px` (screen pixels) or `%` of the scene width / height; default `0` |
-| `duration` | no | time the camera needs to get there, in ms; without it [`zoom-speed`](#root-keys) applies, otherwise instant |
-| `timing-function` | no | CSS timing function (`linear` default) |
+| `duration` | no | time the camera needs to get there, in ms; without it [`zoomSpeed`](#root-keys) applies, otherwise instant |
+| `timingFunction` | no | CSS timing function (`linear` default) |
 | `async`, `awid` | no | run in parallel, see [Parallel steps](#parallel-steps) |
 
 ```json
-{ "cmd": "zoom-to", "zoom": 2, "x": "300px", "y": "200px", "duration": 800, "timing-function": "ease-in-out" }
+{ "cmd": "zoomTo", "zoom": 2, "x": "300px", "y": "200px", "duration": 800, "timingFunction": "ease-in-out" }
 ```
 
 The rules:
 
-- The target of the centre is chosen in this order: `follow` → `zoom-to` → `x`/`y` (the first present wins; `follow` ignores the others). If none is present, the centre stays and only the zoom changes.
-- `follow` stays active until another `zoom-to` sets a different target (`follow`, `zoom-to`, `x`, `y`) – then the camera stops following.
-  A `zoom-to` that changes only `zoom` (or the `nza*` values) keeps following. Following ends with playback (the framing stays).
+- The target of the centre is chosen in this order: `follow` → `zoomTo` → `x`/`y` (the first present wins; `follow` ignores the others). If none is present, the centre stays and only the zoom changes.
+- `follow` stays active until another `zoomTo` sets a different target (`follow`, `zoomTo`, `x`, `y`) – then the camera stops following.
+  A `zoomTo` that changes only `zoom` (or the `nza*` values) keeps following. Following ends with playback (the framing stays).
 - The followed point is the image's position `x`, `y` (its anchor, see [`xa`, `ya`](#positioning)), not its centre.
 - With `nzax`/`nzay` the camera **does not move** while the point is inside the area; when it leaves it, the camera moves just enough
   for the point to be on the edge of the area. Handy for a cursor that only gets a little bit off-centre.
-- A new `zoom-to` interrupts the previous one that is still running.
+- A new `zoomTo` interrupts the previous one that is still running.
 
 ```json
-{ "cmd": "zoom-to", "follow": "cursor", "zoom": 2, "nzax": "30%", "nzay": "30%", "duration": 600 }
+{ "cmd": "zoomTo", "follow": "cursor", "zoom": 2, "nzax": "30%", "nzay": "30%", "duration": 600 }
 ```
 
 ## Following images: `follow`
@@ -274,9 +287,9 @@ The `follow` parameter of `image` / `set` makes the image a **follower** of anot
 { "cmd": "image", "id": "badge", "url": "./badge.svg", "x": "20px", "y": "-30px", "follow": "cursor" }
 ```
 
-- Whenever the followed image moves (`slide`, `set` with `x`/`y`/`move-to`), every follower moves by **the same distance**.
+- Whenever the followed image moves (`slide`, `set` with `x`/`y`/`moveTo`), every follower moves by **the same distance**.
   The position given for the follower is the starting offset; it keeps it afterwards.
-- With a `slide` the followers move at the same time and with the same `duration` and `timing-function`, so they stay in place relative to the leader.
+- With a `slide` the followers move at the same time and with the same `duration` and `timingFunction`, so they stay in place relative to the leader.
 - It works in chains (A follows B follows C) and any number of followers may follow one image. Cycles are safe.
 - Moving the follower itself does not move the leader. `"follow": null` in `set` ends the following.
 
@@ -284,7 +297,81 @@ The `follow` parameter of `image` / `set` makes the image a **follower** of anot
 
 Zooming enlarges the **whole scene** – the camera only decides which part of it is visible; the coordinates `x`, `y` of images do not change.
 The container's size stays the same and what is outside the view is cut off. `%` in `x`/`y` always relate to the whole (non-zoomed) scene.
-See [`zoom-to`](#zoom-to). The camera is reset on every `play()` and `reset()`.
+See [`zoomTo`](#zoomto). The camera is reset on every `play()` and `reset()`.
+
+## Macros
+
+A macro is a named list of steps that you can run repeatedly, with different arguments. Macros are defined in the root key `macros`:
+
+```json
+"macros": {
+  "clickAt": {
+    "name": "clickAt",
+    "args": ["x", "y", { "name": "duration", "default": 500 }],
+    "steps": [
+      { "cmd": "slide", "id": "cursor", "x": "$(x)", "y": "$(y)", "duration": "$(duration)" },
+      { "cmd": "set", "id": "click", "moveTo": "cursor" },
+      { "cmd": "animate", "id": "click", "animation": "click", "wait": true }
+    ]
+  }
+}
+```
+
+| Key | Meaning |
+|-----|---------|
+| *(key of the object)* | name of the macro, used by `call` |
+| `name` | name of the macro (same as the key; `call` finds the macro by either) |
+| `steps` | steps of the macro, the same format as `steps` in the root (they may contain `subSteps` and other `call`s) |
+| `args` | list of arguments: a string (the name – required argument) or `{ "name": "...", "default": ... }` (optional, with a default value) |
+
+**Arguments in steps.** In any string value of the macro's steps (also in nested `subSteps`) `$(argumentName)` is replaced by the value of the argument:
+
+- if the whole string is `"$(x)"`, the value is inserted as it is, with its type (`"duration": "$(duration)"` receives the number `500`);
+- if `$(x)` is only a part of the string (`"url": "./screen-$(n).png"`), the value is converted to text and inserted;
+- an unknown argument in `$(...)` is an error.
+
+Ids of images created in a macro are global – give them names from arguments (`"id": "item-$(n)"`) if you call the macro several times.
+
+### `call`
+
+Runs a macro.
+
+| Key | Required | Meaning |
+|-----|:--------:|---------|
+| `name` | yes | name of the macro |
+| `args` | no | object with the values of the arguments: `{ "x": "300px", "y": "200px" }` |
+| `async` | no | `true` = the next steps continue at the same time, see [Parallel steps](#parallel-steps) |
+| `awid` | no | name for [`await`](#await) (with `async`) |
+
+```json
+{ "cmd": "call", "name": "clickAt", "args": { "x": "300px", "y": "200px", "duration": 800 } }
+```
+
+- An argument without a default that is not passed is an error; so is an argument the macro does not have.
+- A macro may call other macros. A macro that calls itself endlessly is stopped with an error (nesting limit).
+- The macro's steps run as a group (like [`subSteps`](#substeps)): the next step starts when the macro has finished, including its own async steps.
+
+## CSS classes
+
+`cssClasses` in the root defines classes; the `cssClass` parameter of an image assigns them.
+
+```json
+{
+  "cssClasses": {
+    "shadow": { "filter": "drop-shadow(2px 4px 3px rgba(0,0,0,.4))" },
+    "faded": { "opacity": 0.5, "mixBlendMode": "multiply" }
+  },
+  "steps": [
+    { "cmd": "image", "id": "cursor", "url": "./cursor.svg", "cssClass": "shadow" },
+    { "cmd": "image", "id": "mark", "url": "./mark.svg", "cssClass": ["shadow", "faded"] }
+  ]
+}
+```
+
+- The class is an object `{ CSS property: value }`. Properties may be written in `camelCase` or `kebab-case`; a value may end with `!important`.
+- `cssClass` is a name or an array of names. `set` with `cssClass` **replaces** the classes of the image (`null` or `[]` removes them).
+- The classes are applied to the image itself (the `img` element) – like `styles`. Inline `styles` win over a class.
+- The names get a unique prefix in the page, so they never clash with your own CSS classes or with another `ImgCast` on the same page.
 
 ## `animations`
 
@@ -294,7 +381,7 @@ Defines reusable animations for [`animate`](#animate). It is an object: the key 
 |-----------------------|---------|
 | `"0%"` … `"100%"` | keyframes – an object of CSS properties the image has at that moment |
 | `duration` | default duration in ms (default `1000`) |
-| `timing-function` | default CSS timing function (default `linear`) |
+| `timingFunction` | default CSS timing function (default `linear`) |
 
 ```json
 "animations": {
@@ -303,7 +390,7 @@ Defines reusable animations for [`animate`](#animate). It is an object: the key 
     "50%":  { "transform": "scale(20)", "opacity": 1 },
     "95%":  { "transform": "scale(1)",  "opacity": 1 },
     "100%": { "transform": "scale(1)",  "opacity": 0 },
-    "timing-function": "linear",
+    "timingFunction": "linear",
     "duration": 500
   }
 }
@@ -323,8 +410,8 @@ A mouse cursor moves to a point, a "click" mark flashes there and the screenshot
     { "cmd": "image", "id": "click", "url": "./mark.svg", "x": "-100%", "y": "0",
       "xa": "center", "ya": "center", "styles": { "opacity": 0 } },
 
-    { "cmd": "slide", "id": "cursor", "x": "910px", "y": "184px", "duration": 1500, "timing-function": "ease-in" },
-    { "cmd": "set", "id": "click", "move-to": "cursor" },
+    { "cmd": "slide", "id": "cursor", "x": "910px", "y": "184px", "duration": 1500, "timingFunction": "ease-in" },
+    { "cmd": "set", "id": "click", "moveTo": "cursor" },
     { "cmd": "animate", "id": "click", "animation": "click", "wait": true },
 
     { "cmd": "set", "id": "app", "url": "./ps-002.png" },
@@ -336,7 +423,7 @@ A mouse cursor moves to a point, a "click" mark flashes there and the screenshot
       "50%":  { "transform": "scale(20)", "opacity": 1 },
       "95%":  { "transform": "scale(1)",  "opacity": 1 },
       "100%": { "transform": "scale(1)",  "opacity": 0 },
-      "timing-function": "linear",
+      "timingFunction": "linear",
       "duration": 500
     }
   }

@@ -33,12 +33,12 @@
       "x": "910px",
       "y": "184px",
       "duration": 500,
-      "timing-function": "ease-in"
+      "timingFunction": "ease-in"
     },
     {
       "cmd": "set",
       "id": "click",
-      "move-to": "cursor"
+      "moveTo": "cursor"
     },
     {
       "cmd": "animate",
@@ -61,14 +61,14 @@
       "cmd": "slide",
       "id": "cursor",
       "duration": 500,
-      "timing-function": "ease-in",
+      "timingFunction": "ease-in",
       "x": "339px",
       "y": "586px"
     },
     {
       "cmd": "set",
       "id": "click",
-      "move-to": "cursor"
+      "moveTo": "cursor"
     },
     {
       "cmd": "animate",
@@ -87,14 +87,14 @@
       "cmd": "slide",
       "id": "cursor",
       "duration": 500,
-      "timing-function": "ease-in",
+      "timingFunction": "ease-in",
       "x": "944px",
       "y": "114px"
     },
     {
       "cmd": "set",
       "id": "click",
-      "move-to": "cursor"
+      "moveTo": "cursor"
     },
     {
       "cmd": "animate",
@@ -113,14 +113,14 @@
       "cmd": "slide",
       "id": "cursor",
       "duration": 500,
-      "timing-function": "ease-in",
+      "timingFunction": "ease-in",
       "x": "959px",
       "y": "132px"
     },
     {
       "cmd": "set",
       "id": "click",
-      "move-to": "cursor"
+      "moveTo": "cursor"
     },
     {
       "cmd": "animate",
@@ -140,14 +140,14 @@
       "cmd": "slide",
       "id": "cursor",
       "duration": 500,
-      "timing-function": "ease-in",
+      "timingFunction": "ease-in",
       "x": "377px",
       "y": "540px"
     },
     {
       "cmd": "set",
       "id": "click",
-      "move-to": "cursor"
+      "moveTo": "cursor"
     },
     {
       "cmd": "animate",
@@ -181,7 +181,7 @@
         "transform": "scale(1)",
         "opacity": 0
       },
-      "timing-function": "linear",
+      "timingFunction": "linear",
       "duration": 500
     }
   }

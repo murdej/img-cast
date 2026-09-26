@@ -6,7 +6,17 @@ Formát vychází z [Keep a Changelog](https://keepachangelog.com/cs/1.1.0/), ve
 
 ## [Unreleased]
 
+### Changed
+- **Primární formát scriptu je nově `camelCase`**: `moveTo`, `timingFunction`, `slideSpeed`, `zoomSpeed`, `zoomTo` (parametr i příkaz `zoomTo`), příkaz `subSteps`. Scripty v dosavadním `kebab-case` (`move-to`, `timing-function`, `slide-speed`, `zoom-speed`, `zoom-to`, `sub-steps`) se dál načtou – převedou se automaticky (konstruktor, `ImgCast.load`, exportovaná `normalizeScript`). Ukázky a dokumentace používají `camelCase`.
+- `ImgCast#script` nově obsahuje normalizovaný (camelCase) script.
+
 ### Added
+- Metoda `preload()`: přednačte všechny obrázky (i z vnořených kroků a volání maker).
+- Klíč `macros` v kořeni a příkaz `call` (s `async`/`awid`): opakovaně použitelné skupiny kroků s argumenty, dosazováním `$(název)` a výchozími hodnotami.
+- Klíč `cssClasses` v kořeni a parametr obrázku `cssClass` (`string | string[]`); názvy tříd mají prefix podle instance.
+- Volba / vlastnost `loop` (`true`, nebo počet přehrání) a událost `loop`.
+- Exportované `defineScript()` a `normalizeScript()`; kompletní TypeScript typy (`Script`, `Step`, `Macro`, `CssClasses`, ...), script lze psát jako TS strukturu.
+- Ukázka `examples/sample-4` (makra, CSS třídy) a checkbox smyčky na ukázkové stránce.
 - Parametr `follow` u obrázků (`image`, `set`): následovníci se pohybují spolu se sledovaným obrázkem.
 - Příkaz `zoom-to` – zoom a posun kamery s parametry `zoom`, `x`/`y`, `zoom-to`, `follow`, `nzax`/`nzay`, `duration`, `timing-function`, `async`.
 - Klíče v kořeni `slide-speed` a `zoom-speed` (`s`, `ms`, `pps`, `ppms`).

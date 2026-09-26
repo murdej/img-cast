@@ -7,7 +7,7 @@ Formát scriptu: [script-format.cs.md](script-format.cs.md). Typy: `src/img-cast
 ## Model
 
 Přehrávač vykreslí scénu do `container`. Ten dostane `overflow: hidden` a (pokud nemá jiné) `position: relative`.
-Kontejner obsahuje jednu vnitřní vrstvu („svět“, kterou posouvá a zvětšuje `zoom-to`) a každý `image` v ní je dvojice elementů:
+Kontejner obsahuje jednu vnitřní vrstvu („svět“, kterou posouvá a zvětšuje `zoomTo`) a každý `image` v ní je dvojice elementů:
 
 ```
 <div>   ← wrapper: position:absolute, left/top (x, y), translate podle xa/ya, visibility
@@ -15,10 +15,10 @@ Kontejner obsahuje jednu vnitřní vrstvu („svět“, kterou posouvá a zvět�
 </div>
 ```
 
-Polohu (`slide`, `set`, `move-to`) tedy řeší wrapper a vzhled/animace `img`, takže se navzájem neruší
+Polohu (`slide`, `set`, `moveTo`) tedy řeší wrapper a vzhled/animace `img`, takže se navzájem neruší
 (např. `transform: scale()` v animaci nerozhodí zarovnání).
 
-Kroky se provádějí sekvenčně, pokud nemá `slide` nebo `sub-steps` `async: true` – pak script pokračuje hned a `await` na něj může počkat později (viz [script-format.cs.md](script-format.cs.md#souběžné-kroky)). Krok je hotový okamžitě (`image`, `set`), po uplynutí `duration` (`slide`, `pause`)
+Kroky se provádějí sekvenčně, pokud nemá `slide` nebo `subSteps` `async: true` – pak script pokračuje hned a `await` na něj může počkat později (viz [script-format.cs.md](script-format.cs.md#souběžné-kroky)). Krok je hotový okamžitě (`image`, `set`), po uplynutí `duration` (`slide`, `pause`)
 nebo – u `animate` – jen s `"wait": true`; bez něj animace běží na pozadí a script pokračuje dál.
 
 ## `new ImgCast(container, script, options?)`
@@ -26,9 +26,10 @@ nebo – u `animate` – jen s `"wait": true`; bez něj animace běží na pozad
 | Parametr          | Popis                                                          |
 |-------------------|----------------------------------------------------------------|
 | `container`       | `HTMLElement`, do kterého se vykresluje                        |
-| `script`          | objekt `{ steps, animations? }`                                |
+| `script`          | objekt [scriptu](script-format.cs.md) (`steps`, `animations?`, `macros?`, `cssClasses?`, ...). Klíče ve starším `kebab-case` se převedou automaticky |
 | `options.baseUrl` | základ pro relativní `url` obrázků; výchozí `document.baseURI` |
 | `options.speed`   | rychlost přehrávání, výchozí `1`                               |
+| `options.loop`    | `false` (výchozí) = jednou, `true` = donekonečna, číslo = celkový počet přehrání |
 
 ## `ImgCast.load(container, url, options?)` → `Promise<ImgCast>`
 
@@ -39,10 +40,12 @@ Při HTTP chybě vyhodí `Error`.
 
 | Člen | Popis |
 |------|-------|
-| `play(): Promise<void>` | zastaví případné přehrávání, vyčistí scénu, přednačte obrázky a přehraje script. Promise se splní po posledním kroku, nebo po `stop()`/`reset()`. Chyby ve scriptu (neznámé `id`, animace) Promise zamítnou. |
+| `preload(): Promise<void>` | přednačte všechny obrázky scriptu – včetně kroků vnořených v `subSteps` a kroků maker tak, jak je volá `call` (s dosazenými argumenty). Obrázky se načtou jednou; opakovaná volání i `play()` je znovu použijí. Chybějící obrázek přednačtení neshodí. Zavolej ji brzy (např. hned po `load`), aby `play()` začal bez čekání. |
+| `play(): Promise<void>` | zastaví případné přehrávání, vyčistí scénu, přednačte obrázky a přehraje script (opakovaně podle `loop`). Promise se splní po posledním kroku posledního přehrání, nebo po `stop()`/`reset()` – s `loop: true` až po `stop()`. Chyby ve scriptu (neznámé `id`, animace, makro) Promise zamítnou. |
 | `stop()` | přeruší přehrávání, scéna zůstane v aktuálním stavu, běžící animace se zruší |
 | `reset()` | `stop()` + odstranění všech obrázků ze scény |
 | `speed` | kladné číslo; `2` = dvakrát rychleji, `0.5` = poloviční. Škáluje `duration` u `slide`, `pause`, `animate`. Uplatní se od dalšího kroku. Neplatná hodnota → `RangeError`. |
+| `loop` | `false` = jednou, `true` = donekonečna, kladné celé číslo = celkový počet přehrání. Lze měnit za běhu (kontroluje se na konci každého přehrání); neplatná hodnota → `RangeError`. |
 | `playing` | `true`, pokud přehrávání běží |
 | `container`, `script`, `baseUrl` | předané hodnoty |
 
@@ -52,20 +55,53 @@ Při HTTP chybě vyhodí `Error`.
 
 | Událost | `detail` | Kdy |
 |---------|----------|-----|
-| `step` | `{ index, step, path }` | před provedením každého kroku, i kroků zanořených v `sub-steps`; `index` je pozice v jeho seznamu, `path` pole pozic od kořene (např. `[2, 0]`) |
-| `end` | – | po dokončení posledního kroku (ne po `stop()`) |
+| `step` | `{ index, step, path }` | před provedením každého kroku, i kroků zanořených v `subSteps`; `index` je pozice v jeho seznamu, `path` pole pozic od kořene (např. `[2, 0]`) |
+| `loop` | `{ iteration }` | na konci přehrání, po kterém následuje další (kvůli `loop`); `iteration` je počet dokončených přehrání |
+| `end` | – | po dokončení posledního kroku posledního přehrání (ne po `stop()`; nikdy s `loop: true`) |
 
 ## Souřadnice a jednotky
 
 - `x`, `y`: číslo nebo řetězec bez jednotky = `px`; jinak libovolná CSS délka (`"50%"`, `"10em"`). Procenta jsou vůči kontejneru.
 - `xa`, `ya`: `left|center|right`, resp. `top|center|bottom`, nebo `"*%"` – co určuje hodnota `x`/`y` (kotevní bod obrázku).
-- `move-to`: `id` existujícího image; převezme jeho aktuální `left`/`top` (při probíhajícím `slide` aktuální mezipolohu). Explicitní `x`/`y` mají přednost, zarovnání se nepřebírá.
+- `moveTo`: `id` existujícího image; převezme jeho aktuální `left`/`top` (při probíhajícím `slide` aktuální mezipolohu). Explicitní `x`/`y` mají přednost, zarovnání se nepřebírá.
 
 ## Animace
 
 `animations` definuje pojmenované animace; klíče `*%` jsou keyframy (CSS vlastnosti v kebab-case i camelCase),
-`duration` a `timing-function` jsou výchozí hodnoty, které lze v kroku `animate` přepsat. Animace se spouští
+`duration` a `timingFunction` jsou výchozí hodnoty, které lze v kroku `animate` přepsat. Animace se spouští
 přes `Element.animate()` na vnitřním `img`; po skončení se obrázek vrátí do stavu daného `styles`.
+
+## Smyčka
+
+```js
+const cast = await ImgCast.load(el, 'script.json', { loop: true }); // nebo cast.loop = 3
+cast.play();          // opakuje, dokud nezavoláš cast.stop()
+```
+
+Každé opakování začíná od čisté scény (jako `play()` – obrázky, kamera a jména `awid` se vynulují); obrázky zůstávají přednačtené,
+takže mezi přehráními nic neblikne. Rychlost přehrávání a další nastavení se zachovají. Script bez jakéhokoli čekání
+stránku nezablokuje – přehrávač mezi opakováními uvolní vlákno prohlížeči.
+
+## Pomocné funkce
+
+| Funkce | Popis |
+|--------|-------|
+| `defineScript(script)` | vrátí `script` beze změny; v TypeScriptu ho zkontroluje proti typu `Script` a nabízí doplňování |
+| `normalizeScript(json)` | převede starší `kebab-case` script na `camelCase` a vrátí nový objekt (konstruktor i `ImgCast.load` to dělají automaticky) |
+
+```ts
+import { ImgCast, defineScript } from 'img-cast';
+
+const script = defineScript({
+  steps: [
+    { cmd: 'image', id: 'app', url: './ps-001.png' },
+    { cmd: 'slide', id: 'app', x: 100, duration: 500, timingFunction: 'ease-in' },
+  ],
+});
+new ImgCast(document.getElementById('stage')!, script).play();
+```
+
+Všechny typy (`Script`, `Step`, `Macro`, `CssClasses`, ...) se exportují z `img-cast`.
 
 ## Použití s frameworky
 
@@ -88,7 +124,7 @@ Analogicky ve Vue (`onMounted`/`onBeforeUnmount`) nebo Svelte (`onMount`).
 ## Omezení
 
 - Vyžaduje DOM (prohlížeč). Import v Node.js (SSR) projde, konstruktor ne.
-- Kamera (`zoom-to`) je CSS transformace vnitřní vrstvy animovaná přes `requestAnimationFrame`; změna velikosti kontejneru při zoomované scéně se projeví až při dalším pohybu kamery.
+- Kamera (`zoomTo`) je CSS transformace vnitřní vrstvy animovaná přes `requestAnimationFrame`; změna velikosti kontejneru při zoomované scéně se projeví až při dalším pohybu kamery.
 - `follow` používá aktuální vypočtenou pozici obrázků, takže sleduje i obrázek uprostřed `slide`.
 - Jména `awid` jsou globální pro jedno přehrávání; při každém `play()` se vymažou.
 - Async kroky nelze rušit jednotlivě – všechny najednou jen `stop()`/`reset()`.

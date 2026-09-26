@@ -19,7 +19,8 @@
       <select id="sample">
         <option value="./sample-1/script.json">1 – základní</option>
         <option value="./sample-2/script.json">2 – async / await</option>
-        <option value="./sample-3/script.json">3 – follow / zoom-to</option>
+        <option value="./sample-3/script.json">3 – follow / zoomTo</option>
+        <option value="./sample-4/script.json">4 – makra / cssClasses</option>
       </select>
     </label>
     <label>Rychlost
@@ -28,6 +29,7 @@
         <option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option>
       </select>
     </label>
+    <label><input type="checkbox" id="loop"> Smyčka</label>
     <span id="status"></span>
   </div>
   <div id="stage"></div>
@@ -38,13 +40,18 @@
     const status = document.getElementById('status');
     const stage = document.getElementById('stage');
     const speedSelect = document.getElementById('speed');
+    const loopBox = document.getElementById('loop');
     let cast;
 
     async function load(url) {
       cast?.reset();
-      cast = await ImgCast.load(stage, url, { speed: speedSelect.value });
+      cast = await ImgCast.load(stage, url, { speed: speedSelect.value, loop: loopBox.checked });
       cast.addEventListener('step', (e) => (status.textContent = `krok ${e.detail.path.map((i) => i + 1).join('.')}: ${e.detail.step.cmd}`));
+      cast.addEventListener('loop', (e) => (status.textContent = `opakuji (${e.detail.iteration}×)`));
       cast.addEventListener('end', () => (status.textContent = 'hotovo'));
+      status.textContent = 'načítám obrázky…';
+      await cast.preload();
+      status.textContent = '';
       window.cast = cast;
     }
     await load(document.getElementById('sample').value);
@@ -53,6 +60,7 @@
     document.getElementById('play').onclick = () => cast.play();
     document.getElementById('stop').onclick = () => cast.stop();
     document.getElementById('reset').onclick = () => { cast.reset(); status.textContent = ''; };
+    loopBox.onchange = () => (cast.loop = loopBox.checked);
     speedSelect.onchange = (e) => (cast.speed = e.target.value);
   </script>
 </body>

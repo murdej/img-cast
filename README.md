@@ -37,7 +37,7 @@ Example script:
   "steps": [
     { "cmd": "image", "id": "app", "url": "./ps-001.png" },
     { "cmd": "image", "id": "cursor", "url": "./cursor.svg", "x": "50%", "y": "50%" },
-    { "cmd": "slide", "id": "cursor", "x": "100px", "y": "100px", "duration": 500, "timing-function": "ease-in" },
+    { "cmd": "slide", "id": "cursor", "x": "100px", "y": "100px", "duration": 500, "timingFunction": "ease-in" },
     { "cmd": "pause", "duration": 500 }
   ]
 }
@@ -47,12 +47,15 @@ Example script:
 
 | Member | Description |
 |--------|-------------|
-| `new ImgCast(container, script, { baseUrl, speed })` | creates a player |
+| `new ImgCast(container, script, { baseUrl, speed, loop })` | creates a player |
 | `ImgCast.load(container, url, options)` | loads the script with `fetch`; `baseUrl` = the script's URL |
+| `preload()` | preloads all images of the script |
 | `play()` | plays from the start; the Promise resolves when finished |
 | `stop()` / `reset()` | stops / stops and clears the scene |
 | `speed` | playback speed (1 = normal, 2 = twice as fast) |
-| events `step`, `end` | playback progress |
+| `loop` | `true` = repeat forever, a number = total plays |
+| events `step`, `loop`, `end` | playback progress |
+| `defineScript()`, `normalizeScript()` | TypeScript helper, legacy `kebab-case` → `camelCase` |
 
 Full documentation: [docs/api.md](docs/api.md). Script format: [docs/script-format.md](docs/script-format.md).
 
@@ -62,7 +65,7 @@ A modern browser (ES modules, `Element.animate`, `EventTarget`). The library tou
 
 ## Example
 
-`examples/index.html` in the repository (`sample-1` basics, `sample-2` async/await, `sample-3` follow and zoom) – serve it over HTTP (modules and `fetch` do not work over `file://`):
+`examples/index.html` in the repository (`sample-1` basics, `sample-2` async/await, `sample-3` follow and zoom, `sample-4` macros, CSS classes, loop) – serve it over HTTP (modules and `fetch` do not work over `file://`):
 
 ```sh
 python3 -m http.server   # then open /examples/

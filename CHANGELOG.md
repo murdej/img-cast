@@ -6,7 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 
 ## [1.1.0] - 2026-09-26
 
+### Changed
+- **Primary script format is now `camelCase`**: `moveTo`, `timingFunction`, `slideSpeed`, `zoomSpeed`, `zoomTo` (parameter and command `zoomTo`), command `subSteps`. Scripts in the previous `kebab-case` (`move-to`, `timing-function`, `slide-speed`, `zoom-speed`, `zoom-to`, `sub-steps`) still load – they are converted automatically (constructor, `ImgCast.load`, exported `normalizeScript`). Examples and docs use `camelCase`.
+- `ImgCast#script` now holds the normalized (camelCase) script.
+
 ### Added
+- `preload()` method: preloads all images (including nested steps and macro calls).
+- Root key `macros` and command `call` (with `async`/`awid`): reusable groups of steps with arguments, `$(name)` substitution and default values.
+- Root key `cssClasses` and image parameter `cssClass` (`string | string[]`); class names are prefixed per instance.
+- `loop` option / property (`true`, or a number of plays) and the `loop` event.
+- Exported `defineScript()` and `normalizeScript()`; complete TypeScript types (`Script`, `Step`, `Macro`, `CssClasses`, ...), scripts can be written as TS structures.
+- Example `examples/sample-4` (macros, CSS classes) and a loop checkbox on the example page.
 - `follow` parameter of images (`image`, `set`): followers move together with the followed image.
 - `zoom-to` command – camera zoom and pan with `zoom`, `x`/`y`, `zoom-to`, `follow`, `nzax`/`nzay`, `duration`, `timing-function`, `async`.
 - Root keys `slide-speed` and `zoom-speed` (`s`, `ms`, `pps`, `ppms`).
