@@ -12,6 +12,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 - `set` can change `text` / `html` of labels and toggle `fixed`.
 - Example `examples/sample-5` (labels, `fixed`).
 
+### Fixed
+- `styles.width` / `styles.height` in `%` were resolved by the browser against the image's own wrapper element, which has no explicit size (it's a shrink-to-fit box) – in practice the percentage ended up computed against the *source image's intrinsic pixel size*, not the scene, so anything other than `100%` rendered at the wrong, size-dependent scale (a container-relative size that happened to look right at one display size and wrong at another). `%` is now resolved against the scene itself, the same way `x`/`y` already are.
+
 ## [1.1.0] - 2026-09-26
 
 ### Changed

@@ -607,7 +607,14 @@ export class ImgCast extends EventTarget {
     if (p.styles) {
       // styly patří vnitřnímu <img>, aby nekolidovaly s pozicováním wrapperu
       for (const [k, v] of Object.entries(p.styles)) {
-        img.style.setProperty(kebab(k), String(v));
+        // `width`/`height` v `%` by se počítaly z wrapperu (ten je bez explicitní velikosti, takže
+        // je to shrink-to-fit box) – prohlížeč je pak nedovede spočítat vůči scéně a spadne na
+        // intrinsic velikost obrázku. Řešíme stejně jako `%` v x/y: dopočítáme px sami, vůči scéně.
+        if ((k === 'width' || k === 'height') && typeof v === 'string' && /%\s*$/.test(v)) {
+          img.style.setProperty(kebab(k), `${this._px(v, k === 'width' ? 'x' : 'y')}px`);
+        } else {
+          img.style.setProperty(kebab(k), String(v));
+        }
       }
     }
     if (p.follow !== undefined) rec.follow = p.follow || null;

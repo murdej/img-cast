@@ -12,6 +12,9 @@ Formát vychází z [Keep a Changelog](https://keepachangelog.com/cs/1.1.0/), ve
 - `set` umí měnit `text` / `html` popisků a přepínat `fixed`.
 - Ukázka `examples/sample-5` (popisky, `fixed`).
 
+### Fixed
+- `styles.width` / `styles.height` v `%` počítal prohlížeč vůči wrapperu obrázku, který nemá explicitní velikost (je to shrink-to-fit box) – v praxi se procenta spočítala vůči *intrinsic velikosti zdrojového obrázku*, ne vůči scéně, takže cokoliv jiného než `100%` se vykreslilo v jiném, na velikosti zdroje závislém měřítku (velikost relativní ke kontejneru, která vypadala správně jen při jedné konkrétní velikosti zobrazení a jinak při jiné). `%` se teď počítá vůči scéně, stejně jako už dřív u `x`/`y`.
+
 ## [1.1.0] - 2026-09-26
 
 ### Changed
